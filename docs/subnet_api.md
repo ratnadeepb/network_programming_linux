@@ -12,5 +12,5 @@
         - int check_ip_subnet_membership(char *network_id, char mask, char *check_ip);
 
 ***Help***
-- Look at ../subnet/test.c for usage of these functions
-- Look at ../ip_maths.h for detailed API and a few more APIs
+- Look at *../subnet/test.c* for usage of these functions
+- Look at *../ip_maths.h* for detailed API and a few more APIs
