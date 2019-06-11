@@ -133,7 +133,7 @@ get_broadcast_address(char *ip_address, char mask, char *output_buffer)
         char *ret;
         int cidr = 0;
 
-        if (mask < 8 || mask > 30) exit(EXIT_FAILURE); /* mask cannot be less than 8 or more than 30 or less than 1 */
+        if (mask < 8 || mask > 30) exit(EXIT_FAILURE); /* mask cannot be less than 8 or more than 30 */
 
         /* we assume that CIDR is not being used */
         switch (mask) {
