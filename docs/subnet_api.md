@@ -1,6 +1,6 @@
-**This document presents the API for doing basic IP/Netmask related calculations**
+# This document presents the API for doing basic IP/Netmask related calculations
 
-**Available APIs**
+## Available APIs
 1. **Subnet Related**
     * Find the Broadcast IP of a subnet
         - void get_broadcast_address(char *ip_address, char mask, char *output_buffer);
