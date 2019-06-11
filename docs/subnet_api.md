@@ -1,14 +1,15 @@
 **This document presents the API for doing basic IP/Netmask related calculations**
 
-**Available Operations**
-- Find the Broadcast IP of a subnet
-        -- void get_broadcast_address(char *ip_address, char mask, char *output_buffer);
-- Find the network ID of a subnet
-        -- void get_network_id(char *ip_address, char mask, char *output_buffer);
-- Find how many hosts can a subnet fit
-        -- unsigned int get_subnet_cardinality(char mask);
-- Check if an IP belongs to a particular subnet
-        -- int check_ip_subnet_membership(char *network_id, char mask, char *check_ip);
+**Available APIs**
+- **Subnet Related**
+        - Find the Broadcast IP of a subnet<br>
+                -- void get_broadcast_address(char *ip_address, char mask, char *output_buffer);
+        - Find the network ID of a subnet<br>
+                -- void get_network_id(char *ip_address, char mask, char *output_buffer);
+        - Find how many hosts can a subnet fit<br>
+                -- unsigned int get_subnet_cardinality(char mask);
+        - Check if an IP belongs to a particular subnet<br>
+                -- int check_ip_subnet_membership(char *network_id, char mask, char *check_ip);
 
 ***Help***
 - Look at ../subnet/test.c for usage of these functions
