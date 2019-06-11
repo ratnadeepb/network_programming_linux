@@ -23,9 +23,7 @@ char *
 get_octets(char *ip_address, char num) {
         int i = 0;
         int j = 0;
-        int old = 0; /* hold the index of the last period */
 
-        int sz = strlen(ip_address);
         char *temp = (char *)malloc(sizeof(char)
                         * 3 /* size of each octet */
                         * num /* number of octets */
@@ -37,7 +35,7 @@ get_octets(char *ip_address, char num) {
         /* j is incremented for each octet
          * the while loop breaks when num octets are found */
         while (j != num) {
-                for (; i < strlen(ip_address); i++) {
+                for (; i < (int)strlen(ip_address); i++) {
                         if (ip_address[i] == '.') j++;
                         if (j == num) break;
                 }
@@ -64,76 +62,75 @@ get_ip_integral_equivalent(char *ip_address) {
         return ip;
 }
 
-char *
-decimal_to_dotted_ipv4(unsigned int ip_address)
+void
+get_abcd_ip_format(unsigned int ip_address, char *output_buffer)
 {
-        printf("Starting %s\n", __func__); /* debug */
         char *ip_addr;
         char *octet;
         int oct;
         int i;
+
         /* the max value of ip address can be
          * 255 * (256**3) + 255 * (256*2) + 255 * 256 + 255 */
-        if (ip_address < 0 || ip_address > 4278386175) exit(EXIT_FAILURE);
+        if (ip_address > 4278386175) exit(EXIT_FAILURE);
         i = 0;
 
         ip_addr = (char *)malloc(sizeof(char) * 20);
-        octet = (char *)malloc(sizeof(char) * 3);
+        octet = (char *)malloc(sizeof(char) * 4);
 
         /* the first octet */
         oct = (int)(ip_address / pow(256.0, 3.0));
         sprintf(octet, "%d", oct);
-        memcpy(ip_addr, octet, strlen(octet));
+        strcpy(ip_addr, octet);
         i += strlen(octet);
-        memcpy(&ip_addr[i], ".", 1);
+        strcpy(&ip_addr[i], ".");
         i++;
         /* the second octet */
         ip_address -= (oct * (int)pow(256.0, 3.0));
         oct = (int)(ip_address / pow(256.0, 2.0));
         sprintf(octet, "%d", oct);
-        memcpy(&ip_addr[i], octet, strlen(octet));
+        strcpy(&ip_addr[i], octet);
         i += strlen(octet);
-        memcpy(&ip_addr[i], ".", 1);
+        strcpy(&ip_addr[i], ".");
         i++;
         /* the third octet */
         ip_address -= (oct * (int)pow(256.0, 2.0));
         oct = (int)(ip_address / 256);
         sprintf(octet, "%d", oct);
-        memcpy(&ip_addr[i], octet, strlen(octet));
+        strcpy(&ip_addr[i], octet);
         i += strlen(octet);
-        memcpy(&ip_addr[i], ".", 1);
+        strcpy(&ip_addr[i], ".");
         i++;
         /* the final octet */
         ip_address -= oct * 256;
         sprintf(octet, "%d", ip_address);
-        memcpy(&ip_addr[i], octet, strlen(octet));
+        strcpy(&ip_addr[i], octet);
 
-        return ip_addr;
+        strcpy(output_buffer, ip_addr);
 }
 
-
 void
-get_cidr_broadcast_addr(char *ip_address, char mask, char **output_buffer)
+get_cidr_broadcast_addr(char *ip_address, char mask, char *output_buffer)
 {
-        int i = 0;
         unsigned int ip = 0;
-        char *ip_int;
+        /* prevent stack smashing */
+        char * ip_addr = (char *)malloc(strlen(ip_address));
+        strcpy(ip_addr, ip_address);
+        char *ip_int = (char *)malloc(sizeof(char) * 20);
         if (mask < 8 || mask > 30) exit(EXIT_FAILURE);
 
-        ip = get_ip_integral_equivalent(ip_address);
-        ip_int = decimal_to_dotted_ipv4(ip | mask);
+        ip = get_ip_integral_equivalent(ip_addr);
+        get_abcd_ip_format(ip | mask, ip_int);
 
-        memcpy(&(*output_buffer), &ip_int, strlen(ip_int));
+        strcpy(output_buffer, ip_int);
 }
 
 void
-get_broadcast_address(char *ip_address, char mask, char **output_buffer)
+get_broadcast_address(char *ip_address, char mask, char *output_buffer)
 {
-        int i = 0;
-        int sz = strlen(ip_address);
-        char* temp;
+        char *temp;
         char num;
-        char *ret = NULL;
+        char *ret;
         int cidr = 0;
 
         if (mask < 8 || mask > 30) exit(EXIT_FAILURE); /* mask cannot be less than 8 or more than 30 or less than 1 */
@@ -162,13 +159,49 @@ get_broadcast_address(char *ip_address, char mask, char **output_buffer)
 
         if (!cidr) {
                 if ((ret = get_octets(ip_address, num)) != NULL) {
-                        memcpy(&(*output_buffer), /* start of the output array */
-                                        &ret, strlen(ret));
-                        memcpy(&(*output_buffer)[strlen(ret)], /* end of the output array */
-                                        temp, strlen(temp));
+                       // memcpy(&(*output_buffer), /* start of the output array */
+                       //                 &ret, strlen(ret));
+                       // memcpy(&(*output_buffer)[strlen(ret)], /* end of the output array */
+                       //                 temp, strlen(temp));
+                       strcpy(output_buffer, ret);
+                       strcpy(&output_buffer[strlen(ret)], temp);
                 }
         } else {
                 get_cidr_broadcast_addr(ip_address, mask, output_buffer);
-        }
-        
+        } 
+}
+
+void
+get_network_id(char *ip_address, char mask, char *output_buffer)
+{
+        char *ip_addr = (char *)malloc(sizeof(char) * 20);
+        strcpy(ip_addr, ip_address);
+        unsigned int ip = get_ip_integral_equivalent(ip_addr);
+        unsigned int nw_id = ip | mask;
+        char *network_id = (char *)malloc(sizeof(char) * 20);
+
+        get_abcd_ip_format(nw_id, network_id);
+        strcpy(output_buffer, network_id);
+}
+
+unsigned int
+get_subnet_cardinality(char mask)
+{
+        const char bits = 32;
+
+        if (mask < 8 || mask > 30) exit(EXIT_FAILURE);
+
+        /* 2 IPs are reserved for network ID (0) and broadcast address (255) */
+        return (unsigned int)pow(2.0, (double)(bits - mask)) - 2;
+}
+
+int /* return 0 if true, -1 if false */
+check_ip_subnet_membership(char *network_id, char mask, char *check_ip)
+{
+        char *nw_id = (char *)malloc(sizeof(char) * 20);
+
+        get_network_id(check_ip, mask, nw_id);
+
+        if (strcmp(nw_id, network_id) != 0) return -1;
+        else return 0;
 }
