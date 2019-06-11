@@ -56,9 +56,10 @@ get_ip_integral_equivalent(char *ip_address) {
 
         ip = atoi(strtok(ip_addr, ".")) * (int)pow(256.0, 3.0);
 
-        while (i >= 0) {
+        while (1) {
                 ip += atoi(strtok(NULL, ".")) * (int)pow(256.0, (double)(i));
                 i--;
+                if (i < 0) break;
         }
         return ip;
 }
