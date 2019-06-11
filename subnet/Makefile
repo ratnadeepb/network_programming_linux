@@ -1,9 +1,12 @@
 CC=gcc
-CFLAGS=-Wall -Wextra
+CFLAGS=-g -Wall -Wextra
+MATHLIB=-lm
 BUILDIR=../build
 
+all: subnet
+
 subnet: ip_maths.c test.c
-	@$(CC) -o $(BUILDIR)/subnet ip_maths.c test.c -lm
+	@$(CC) $(CFLAGS) -o $(BUILDIR)/subnet ip_maths.c test.c $(MATHLIB)
 
 clean:
 	@rm -rf $(BUILDIR)/*
