@@ -27,6 +27,15 @@ test_ip_integral_value(char *ip_address);
 void
 test_decimal_to_dotted_ipv4(char *ip_address);
 
+void
+test_network_id(char *ip_address, char mask);
+
+void
+test_subnet_cardinality(char mask);
+
+void
+test_ip_membership(char *check_ip, char mask);
+
 int
 main(void)
 {
@@ -36,20 +45,27 @@ main(void)
         test_broadcast_addr(ip_address, mask);
         test_ip_integral_value(ip_address);
         test_decimal_to_dotted_ipv4(ip_address);
+        test_network_id(ip_address, mask);
+        test_subnet_cardinality(24); /* 2^8 - 2 = 254 hosts */
+        test_subnet_cardinality(30); /* 2 hosts */
+        test_subnet_cardinality(25); /* CIDR range; 126 hosts */
+        test_ip_membership(ip_address, mask);
 
         return 0;
 }
 
 void
 test_broadcast_addr(char *ip_address, char mask) {
-        char *output_buffer;
+        char *output_buffer = (char *)malloc(sizeof(char) * 20);
         /* preventing stack smashing */
         char *ip_addr = (char *)malloc(sizeof(char) * 20);
         strcpy(ip_addr, ip_address);
 
         printf("The IP address is: %s\n", ip_addr);
-        get_broadcast_address(ip_addr, mask, &output_buffer);
+        get_broadcast_address(ip_addr, mask, output_buffer);
         printf("Broadcast address in %s is %s\n", __func__, output_buffer);
+        free(output_buffer);
+        free(ip_addr);
 }
 
 void
@@ -65,6 +81,42 @@ test_ip_integral_value(char *ip_address)
 void
 test_decimal_to_dotted_ipv4(char *ip_address)
 {
-        unsigned int ip = get_ip_integral_equivalent(ip_address);
-        printf("converting back: %s\n", decimal_to_dotted_ipv4(ip));
+        /* prevent stack smashing */
+        char *ip_addr = (char *)malloc(strlen(ip_address));
+        strcpy(ip_addr, ip_address);
+        char *output_buffer = (char *)malloc(sizeof(char) * 20);
+
+        unsigned int ip = get_ip_integral_equivalent(ip_addr);
+        get_abcd_ip_format(ip, output_buffer);
+        printf("converting back: %s\n", output_buffer);
+        free(output_buffer);
+        free(ip_addr);
+}
+
+void
+test_network_id(char *ip_address, char mask)
+{
+        char *output_buffer = (char *)malloc(sizeof(char) * 20);
+
+        get_network_id(ip_address, mask, output_buffer);
+        printf("Network ID from %s is %s\n", __func__, output_buffer);
+        free(output_buffer);
+}
+
+void
+test_subnet_cardinality(char mask)
+{
+        printf("This subnet can fit %u hosts\n", get_subnet_cardinality(mask));
+}
+
+void
+test_ip_membership(char *check_ip, char mask)
+{
+        char *nw_id = (char *)malloc(sizeof(char) * 20);
+
+        get_network_id(check_ip, mask, nw_id);
+        if (check_ip_subnet_membership(nw_id, mask, check_ip))
+                printf("The IP %s belongs to the network %s\n", check_ip, nw_id);
+        else
+                printf("The IP %s does not belong to the network %s\n", check_ip, nw_id);
 }
