@@ -26,13 +26,14 @@ convert_mask(char mask)
 {
         int i;
         unsigned int mask_int;
+
+        i = 31;
+        mask_int = 0;
+
         if (mask < 8 || mask > 30) {
                 fprintf(stderr, "Wrong mask\n");
                 exit(1);
         }
-
-        i = 31;
-        mask_int = 0;
 
         while (1) {
                 if (i < (32 - mask)) break;
@@ -70,8 +71,8 @@ get_ip_integral_equivalent(char *ip_address)
         ip = 0;
         lim = 256;
         delim = ".";
-        // strtok modifies its argument. With a string literal, placed in read-only memory
-        // this will cause a segmentation fault
+        /* strtok modifies its argument. With a string literal, placed in read-only memory
+         * this will cause a segmentation fault */
         ip_copy = strdup(ip_address); 
         i = 3;
         temp = 0;
@@ -111,17 +112,15 @@ get_abcd_ip_format(unsigned int ip_address, char *output_buffer)
         octet = (char *)malloc(sizeof(char) * 4);
         check_mem(octet);
         lim = 256;
-        i = 3;
         j = 0;
 
-        for (; i >= 0; i--) {
-                tmp = (unsigned int)(ip_address / pow(lim, (double)i)); // get the octet
-                //sprintf(octet, "%u", tmp);                              // convert to string
-                snprintf(octet, sizeof(tmp), "%u", tmp);                              // convert to string
-                ip_address -= tmp * (int)(pow(lim, (double)i));         // reduce IP address int by appropriate amount
-                memcpy(&output_buffer[j], octet, strlen(octet));        // copy octet over
-                j += strlen(octet);                                     // increment array counter
-                if (i != 0) {                                           // don't add the dot at the end of the last octet
+        for (i = 3; i >= 0; i--) {
+                tmp = (unsigned int)(ip_address / pow(lim, (double)i)); /* get the octet */
+                snprintf(octet, sizeof(tmp), "%u", tmp);                /* convert to string */
+                ip_address -= tmp * (int)(pow(lim, (double)i));         /* reduce IP address int by appropriate amount */
+                memcpy(&output_buffer[j], octet, strlen(octet));        /* copy octet over */
+                j += strlen(octet);                                     /* increment array counter */
+                if (i != 0) {                                           /* don't add the dot at the end of the last octet */
                         memcpy(&output_buffer[j], ".", 1);
                         j++;
                 }
@@ -169,7 +168,7 @@ get_subnet_cardinality(char mask)
         return cardinality - 1;
 }
 
-int /* return 0 if true, -1 if false */
+int
 check_ip_subnet_membership(char *network_id, char mask, char *check_ip)
 {
         char *output_buffer;
@@ -183,7 +182,6 @@ check_ip_subnet_membership(char *network_id, char mask, char *check_ip)
 error:
         if (output_buffer) free(output_buffer);
 
-        //if (strcmp(output_buffer, network_id) == 0) return 0;
         if (get_ip_integral_equivalent(network_id)
                         == get_ip_integral_equivalent(output_buffer))
                 return 0;

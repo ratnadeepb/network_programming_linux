@@ -50,12 +50,12 @@ main(void)
         char mask = 24;
 
         test_broadcast_addr(ip_address, mask);
-        test_ip_integral_value(ip_address); // success
-        test_decimal_to_dotted_ipv4(ip_address); // success
-        test_network_id(ip_address, mask); // success
-        test_subnet_cardinality(24); /* 2^8 - 2 = 254 hosts */
-        test_subnet_cardinality(30); /* 2 hosts */
-        test_subnet_cardinality(25); /* CIDR range; 126 hosts */
+        test_ip_integral_value(ip_address);
+        test_decimal_to_dotted_ipv4(ip_address);
+        test_network_id(ip_address, mask);
+        test_subnet_cardinality(24);             /* 2^8 - 2 = 254 hosts */
+        test_subnet_cardinality(30);             /* 2 hosts */
+        test_subnet_cardinality(25);             /* CIDR range; 126 hosts */
         test_ip_membership(ip_address, mask);
         test_lowest_ip(ip_address, mask);
         test_highest_ip(ip_address, mask);
