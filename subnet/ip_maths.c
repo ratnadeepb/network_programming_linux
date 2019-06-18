@@ -3,10 +3,10 @@
  *
  *       Filename:  ip_maths.c
  *
- *    Description:  Implement IP math functions
+ *    Description:  subnet related functions
  *
  *        Version:  1.0
- *        Created:  06/06/2019 08:46:32 PM
+ *        Created:  06/13/2019 03:06:02 PM
  *       Revision:  none
  *       Compiler:  gcc
  *
@@ -17,46 +17,82 @@
  */
 
 #include <math.h>
+#include <assert.h>
 #include "ip_maths.h"
+#include "../common/dbg.h"
 
-char *
-get_octets(char *ip_address, char num) {
-        int i = 0;
-        int j = 0;
-
-        char *temp = (char *)malloc(sizeof(char)
-                        * 3 /* size of each octet */
-                        * num /* number of octets */
-                        + (num - 1) /* space for periods */
-                        );
-
-        if (num > 3) return NULL; /* error handling; there can only be 3 periods in an ip address */
-
-        /* j is incremented for each octet
-         * the while loop breaks when num octets are found */
-        while (j != num) {
-                for (; i < (int)strlen(ip_address); i++) {
-                        if (ip_address[i] == '.') j++;
-                        if (j == num) break;
-                }
+unsigned int
+convert_mask(char mask)
+{
+        int i;
+        unsigned int mask_int;
+        if (mask < 8 || mask > 30) {
+                fprintf(stderr, "Wrong mask\n");
+                exit(1);
         }
-        memcpy(temp, ip_address, i + 1);
-        return temp;
+
+        i = 31;
+        mask_int = 0;
+
+        while (1) {
+                if (i < (32 - mask)) break;
+                mask_int += (unsigned int)pow(2, (double)i);
+                i--;
+        }
+
+        debug("Mask is: %u", mask_int);
+        return mask_int;
+}
+
+void
+get_broadcast_address(char *ip_address, char mask, char *output_buffer)
+{
+        unsigned int ip;
+        unsigned int broadcast_ip;
+        unsigned int mask_int;
+
+        mask_int = convert_mask(mask);
+        ip = get_ip_integral_equivalent(ip_address);
+        broadcast_ip = (ip | ~mask_int);
+        get_abcd_ip_format(broadcast_ip, output_buffer);
 }
 
 unsigned int
-get_ip_integral_equivalent(char *ip_address) {
-        unsigned int ip = 0;
-        int i = 2;
-        /* preventing segmentation fault by strtok */
-        char *ip_addr = (char *)malloc(sizeof(char) * 20);
-        strcpy(ip_addr, ip_address);
+get_ip_integral_equivalent(char *ip_address)
+{
+        unsigned int ip;
+        double lim;
+        char *delim;
+        char *ip_copy;
+        int i;
+        unsigned int temp;
 
-        ip = atoi(strtok(ip_addr, ".")) * (int)pow(256.0, 3.0);
+        ip = 0;
+        lim = 256;
+        delim = ".";
+        // strtok modifies its argument. With a string literal, placed in read-only memory
+        // this will cause a segmentation fault
+        ip_copy = strdup(ip_address); 
+        i = 3;
+        temp = 0;
+        debug("ip address: %s", ip_address);
 
         while (1) {
-                ip += atoi(strtok(NULL, ".")) * (int)pow(256.0, (double)(i));
+                char *tok;
+                if (i == 3) {
+                        if ((tok = strtok(ip_copy, delim)) == NULL)
+                                return EXIT_FAILURE;
+                        else temp = (unsigned int)atoi(tok);
+
+                }
+                else {
+                        if ((tok = strtok(NULL, delim)) == NULL)
+                                return EXIT_FAILURE;
+                        else temp = (unsigned int)atoi(tok);
+                }
+                ip += temp * (unsigned int)pow(lim, (double)i);
                 i--;
+                
                 if (i < 0) break;
         }
         return ip;
@@ -65,143 +101,118 @@ get_ip_integral_equivalent(char *ip_address) {
 void
 get_abcd_ip_format(unsigned int ip_address, char *output_buffer)
 {
-        char *ip_addr;
+        unsigned int tmp;
         char *octet;
-        int oct;
+        double lim;
         int i;
+        int j;
 
-        /* the max value of ip address can be
-         * 255 * (256**3) + 255 * (256*2) + 255 * 256 + 255 */
-        if (ip_address > 4278386175) exit(EXIT_FAILURE);
-        i = 0;
-
-        ip_addr = (char *)malloc(sizeof(char) * 20);
+        tmp = 0;
         octet = (char *)malloc(sizeof(char) * 4);
+        check_mem(octet);
+        lim = 256;
+        i = 3;
+        j = 0;
 
-        /* the first octet */
-        oct = (int)(ip_address / pow(256.0, 3.0));
-        sprintf(octet, "%d", oct);
-        strcpy(ip_addr, octet);
-        i += strlen(octet);
-        strcpy(&ip_addr[i], ".");
-        i++;
-        /* the second octet */
-        ip_address -= (oct * (int)pow(256.0, 3.0));
-        oct = (int)(ip_address / pow(256.0, 2.0));
-        sprintf(octet, "%d", oct);
-        strcpy(&ip_addr[i], octet);
-        i += strlen(octet);
-        strcpy(&ip_addr[i], ".");
-        i++;
-        /* the third octet */
-        ip_address -= (oct * (int)pow(256.0, 2.0));
-        oct = (int)(ip_address / 256);
-        sprintf(octet, "%d", oct);
-        strcpy(&ip_addr[i], octet);
-        i += strlen(octet);
-        strcpy(&ip_addr[i], ".");
-        i++;
-        /* the final octet */
-        ip_address -= oct * 256;
-        sprintf(octet, "%d", ip_address);
-        strcpy(&ip_addr[i], octet);
-
-        strcpy(output_buffer, ip_addr);
-}
-
-void
-get_cidr_broadcast_addr(char *ip_address, char mask, char *output_buffer)
-{
-        unsigned int ip = 0;
-        /* prevent stack smashing */
-        char * ip_addr = (char *)malloc(strlen(ip_address));
-        strcpy(ip_addr, ip_address);
-        char *ip_int = (char *)malloc(sizeof(char) * 20);
-        if (mask < 8 || mask > 30) exit(EXIT_FAILURE);
-
-        ip = get_ip_integral_equivalent(ip_addr);
-        get_abcd_ip_format(ip | mask, ip_int);
-
-        strcpy(output_buffer, ip_int);
-}
-
-void
-get_broadcast_address(char *ip_address, char mask, char *output_buffer)
-{
-        char *temp;
-        char num;
-        char *ret;
-        int cidr = 0;
-
-        if (mask < 8 || mask > 30) exit(EXIT_FAILURE); /* mask cannot be less than 8 or more than 30 */
-
-        /* we assume that CIDR is not being used */
-        switch (mask) {
-                case 8:
-                        num = 1;
-                        temp = (char *)malloc(sizeof(char) * 11);
-                        temp = "255.255.255";
-                        break;
-                case 16:
-                        num = 2;
-                        temp = (char *)malloc(sizeof(char) * 7);
-                        temp = "255.255";
-                        break;
-                case 24:
-                        num = 3;
-                        temp = (char *)malloc(sizeof(char) * 3);
-                        temp = "255";
-                        break;
-                default: /* assume CIDR */
-                        cidr = 1;
-                        break;
-        }
-
-        if (!cidr) {
-                if ((ret = get_octets(ip_address, num)) != NULL) {
-                       // memcpy(&(*output_buffer), /* start of the output array */
-                       //                 &ret, strlen(ret));
-                       // memcpy(&(*output_buffer)[strlen(ret)], /* end of the output array */
-                       //                 temp, strlen(temp));
-                       strcpy(output_buffer, ret);
-                       strcpy(&output_buffer[strlen(ret)], temp);
+        for (; i >= 0; i--) {
+                tmp = (unsigned int)(ip_address / pow(lim, (double)i)); // get the octet
+                //sprintf(octet, "%u", tmp);                              // convert to string
+                snprintf(octet, sizeof(tmp), "%u", tmp);                              // convert to string
+                ip_address -= tmp * (int)(pow(lim, (double)i));         // reduce IP address int by appropriate amount
+                memcpy(&output_buffer[j], octet, strlen(octet));        // copy octet over
+                j += strlen(octet);                                     // increment array counter
+                if (i != 0) {                                           // don't add the dot at the end of the last octet
+                        memcpy(&output_buffer[j], ".", 1);
+                        j++;
                 }
-        } else {
-                get_cidr_broadcast_addr(ip_address, mask, output_buffer);
-        } 
+                memset(octet, 0, strlen(octet));
+        }
+error:
+        if (octet) free(octet);
 }
 
 void
 get_network_id(char *ip_address, char mask, char *output_buffer)
 {
-        char *ip_addr = (char *)malloc(sizeof(char) * 20);
-        strcpy(ip_addr, ip_address);
-        unsigned int ip = get_ip_integral_equivalent(ip_addr);
-        unsigned int nw_id = ip | mask;
-        char *network_id = (char *)malloc(sizeof(char) * 20);
+        unsigned int ip;
+        unsigned int nw;
+        char *network_id;
+        unsigned int mask_int;
 
-        get_abcd_ip_format(nw_id, network_id);
-        strcpy(output_buffer, network_id);
+        mask_int = convert_mask(mask);
+        debug("Mask is: %u", mask_int);
+        network_id = (char *)malloc(sizeof(char) * strlen(ip_address));
+        ip = get_ip_integral_equivalent(ip_address);
+        debug("IP address: %u", ip);
+        nw = (ip & mask_int);
+        debug("Network ID: %u", nw);
+        get_abcd_ip_format(nw, network_id);
+        debug("dotted format: %s", network_id);
+        memcpy(output_buffer, network_id, strlen(network_id));
 }
 
 unsigned int
 get_subnet_cardinality(char mask)
 {
-        const char bits = 32;
+        int i;
+        unsigned int cardinality;
+        
+        i = 31;
+        cardinality = 0;
 
-        if (mask < 8 || mask > 30) exit(EXIT_FAILURE);
+        while (1) {
+                if (i < (32 - mask)) cardinality += (unsigned int)pow(2.0, (double)i);
+                i--;
+                if (i < 0) break;
+        }
 
-        /* 2 IPs are reserved for network ID (0) and broadcast address (255) */
-        return (unsigned int)pow(2.0, (double)(bits - mask)) - 2;
+        return cardinality - 1;
 }
 
 int /* return 0 if true, -1 if false */
 check_ip_subnet_membership(char *network_id, char mask, char *check_ip)
 {
-        char *nw_id = (char *)malloc(sizeof(char) * 20);
+        char *output_buffer;
 
-        get_network_id(check_ip, mask, nw_id);
+        output_buffer = (char *)malloc(sizeof(char) * 20);
+        check_mem(output_buffer);
+        get_network_id(check_ip, mask, output_buffer);
+        debug("Network ID: %s", network_id);
+        debug("IP: %s", output_buffer);
 
-        if (strcmp(nw_id, network_id) != 0) return -1;
-        else return 0;
+error:
+        if (output_buffer) free(output_buffer);
+
+        //if (strcmp(output_buffer, network_id) == 0) return 0;
+        if (get_ip_integral_equivalent(network_id)
+                        == get_ip_integral_equivalent(output_buffer))
+                return 0;
+        return -1;
+}
+
+unsigned int
+get_host_address_min(char *network_id)
+{
+        unsigned int lowest_ip;
+
+        lowest_ip = get_ip_integral_equivalent(network_id);
+        lowest_ip++;
+        return lowest_ip;
+}
+
+unsigned int
+get_host_address_max(char *network_id, char mask)
+{
+        unsigned int nw;
+        unsigned int highest_ip;
+        int i;
+
+        nw = get_ip_integral_equivalent(network_id);
+        highest_ip = 0;
+
+        for (i = 0; i < (32 - mask); i++) highest_ip += (unsigned int)pow(2.0, (double)i);
+        highest_ip--;
+        highest_ip += nw;
+
+        return highest_ip;
 }

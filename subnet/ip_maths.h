@@ -33,6 +33,11 @@
 void
 get_broadcast_address(char *ip_address, char mask, char *output_buffer);
 
+/*
+ * Given IP address in dotted format, return the decimal equivalent
+ * @param ip_address is the network address in dotted format
+ * @return an unsigned int that is the decimal version of the IP
+ */
 unsigned int
 get_ip_integral_equivalent(char *ip_address);
 
@@ -69,8 +74,26 @@ get_subnet_cardinality(char mask);
  * @param network_id is the id of the network
  * @param mask is the network mask
  * @param check_ip is the IP that is being checked for
+ * @return 0 if true, -1 if false
  */
-int /* return 0 if true, -1 if false */
+int
 check_ip_subnet_membership(char *network_id, char mask, char *check_ip);
+
+/*
+ * Get the lowest assignable host address give the network ID and mask
+ * @param network_id is the ID of the network
+ * @return an unsigned int that holds the lowest IP in decimal form
+ */
+unsigned int
+get_host_address_min(char *network_id);
+
+/*
+ * Get the highest assignable host address give the network ID and mask
+ * @param network_id is the ID of the network
+ * @param mask is the network mask
+ * @return an unsigned int that holds the highest IP in decimal form
+ */
+unsigned int
+get_host_address_max(char *network_id, char mask);
 
 #endif
