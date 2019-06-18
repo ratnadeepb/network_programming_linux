@@ -1,14 +1,17 @@
 BUILDIR=./build
 SUBNET_EXE=$(BUILDIR)/subnet.o
-.PHONY: all clean subnet2 test
+.PHONY: all clean dir subnet2 test
 
-all: subnet2
+all: subnet
 
-subnet2:
-	@cd subnet2 && $(MAKE)
+dir:
+	@mkdir -p build
 
-test: subnet2
+subnet: dir
+	@cd subnet && $(MAKE)
+
+test: subnet
 	@$(SUBNET_EXE)
 
 clean:
-	@cd subnet2 && $(MAKE) clean
+	@cd subnet && $(MAKE) clean
