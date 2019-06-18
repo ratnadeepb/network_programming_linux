@@ -4,3 +4,5 @@ This is my attempt to create some online documentation for Linux Network Program
 
 The excercises follow from the Udemy course
 "Network Concepts and Programming from Scratch - Academic LvL"
+
+Look at docs folder for documentation!
