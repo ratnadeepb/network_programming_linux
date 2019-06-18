@@ -1,17 +1,30 @@
 CC=gcc
 DBG_CFLAGS=-g -Wall -Wextra
-CFLAGS=-Wall -Wextra
+CFLAGS=-DNDEBUG=1 -Wall -Wextra
 MATHLIB=-lm
+DEBUGFILE=../common/dbg.h
 BUILDIR=../build
+OBJECTS=$(BUILDIR)/subnet.o
 
-all: subnet
+.PHONY: clean all
 
-subnet: ip_maths.c test.c
+all: $(OBJECTS)
+
+$(OBJECTS): $(DEBUGFILE)
+
+$(BUILDIR)/subnet.o: ip_maths.c test.c
 ifeq ($(NDEBUG), )
-	@$(CC) $(CFLAGS) -o $(BUILDIR)/subnet ip_maths.c test.c $(MATHLIB)
+	@echo Building Release version of subnet
+	@$(CC) $(CFLAGS) $^ -o $@ $(MATHLIB)
 else
-	@$(CC) $(DBG_CFLAGS) -o $(BUILDIR)/subnet ip_maths.c test.c $(MATHLIB)
+	@echo Building Debug version of subnet
+	@$(CC) $(DBG_CFLAGS) $^ -o $@ $(MATHLIB)
 endif
 
 clean:
-	@rm -rf $(BUILDIR)/*
+ifeq (,$(wildcard $(OBJECTS)))
+	@echo "$(OBJECTS) don't exist"
+else
+	@echo removing $(OBJECTS)
+	@rm -rf $(OBJECTS)
+endif
