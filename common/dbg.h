@@ -24,7 +24,8 @@
 #include <string.h>
 
 #ifdef NDEBUG // removes all debug lines
-#define debug(M, ...) // because #define debug (M, ...) is replaced with nothing
+// because #define debug (M, ...) is replaced with nothing
+#define debug(M, ...)
 #else
 // print to standard error
 // __FILE__ --> current file
